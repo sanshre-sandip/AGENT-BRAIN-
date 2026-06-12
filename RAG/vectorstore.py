@@ -1,25 +1,21 @@
 import logging
-from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel
+import uuid
 from typing import Optional
-from langchain_chroma import Chroma
-from .embedding import get_embedder
-from .config import CHROMA_DIR
 
-# ----------------------------------
-# Setup
-# ----------------------------------
+from fastapi import APIRouter, HTTPException
+from langchain_chroma import Chroma
+from pydantic import BaseModel
+
+from .config import CHROMA_DIR
+from .embedding import get_embedder
+
 router = APIRouter()
 logger = logging.getLogger(__name__)
 
-# CHROMA_DIR is now imported from .config
+_vectorstore: Chroma | None = None
 
-_vectorstore = None
-...
-def get_vectorstore():
-    """
-    Lazy-load the Chroma vector store.
-    """
+
+def get_vectorstore() -> Chroma:
     global _vectorstore
     if _vectorstore is None:
         embedder = get_embedder()
@@ -30,14 +26,24 @@ def get_vectorstore():
             persist_directory=CHROMA_DIR,
         )
     return _vectorstore
-...
 
-# ----------------------------------
-# Request / Response Models
-# ----------------------------------
+
+class StoreRequest(BaseModel):
+    chunks: list[str]
+    source: Optional[str] = None
+
+
+class StoreResponse(BaseModel):
+    status: str
+    source: Optional[str]
+    chunks_stored: int
+    total_in_db: int
+    ids: list[str]
+
+
 class SearchRequest(BaseModel):
-    query: str                      # Natural language query
-    top_k: Optional[int] = 5       # Number of results to return
+    query: str
+    top_k: Optional[int] = 5
 
 
 class SearchResult(BaseModel):
@@ -54,16 +60,75 @@ class SearchResponse(BaseModel):
     results: list[SearchResult]
 
 
-# ----------------------------------
-# Endpoints
-# ----------------------------------
+class DeleteRequest(BaseModel):
+    source: str
+
+
+class DeleteResponse(BaseModel):
+    status: str
+    source: str
+    chunks_deleted: int
+    total_in_db: int
+
+
+class StatsResponse(BaseModel):
+    status: str
+    total_documents: int
+    persist_directory: str
+    embedding_model: str
+
+
+def count_documents(store: Chroma) -> int:
+    return len(store.get(include=[])["ids"])
+
+
+def validate_chunks(chunks: list[str]) -> list[str]:
+    if not chunks:
+        raise HTTPException(status_code=400, detail="Chunks list cannot be empty")
+
+    valid_chunks = [chunk for chunk in chunks if chunk.strip()]
+    if not valid_chunks:
+        raise HTTPException(status_code=400, detail="All chunks are empty or whitespace")
+
+    return valid_chunks
+
+
+@router.post("/store", response_model=StoreResponse)
+async def store_chunks(request: StoreRequest):
+    try:
+        valid_chunks = validate_chunks(request.chunks)
+        store = get_vectorstore()
+        ids = [str(uuid.uuid4()) for _ in valid_chunks]
+        metadatas = [
+            {"source": request.source or "unknown", "id": chunk_id}
+            for chunk_id in ids
+        ]
+
+        store.add_texts(
+            texts=valid_chunks,
+            metadatas=metadatas,
+            ids=ids,
+        )
+
+        total = count_documents(store)
+        logger.info(f"Stored {len(valid_chunks)} chunks — total in DB: {total}")
+
+        return StoreResponse(
+            status="success",
+            source=request.source,
+            chunks_stored=len(valid_chunks),
+            total_in_db=total,
+            ids=ids,
+        )
+    except HTTPException:
+        raise
+    except Exception as exc:
+        logger.exception("Store failed")
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
+
 
 @router.post("/search", response_model=SearchResponse)
 async def search_chunks(request: SearchRequest):
-    """
-    Search the vector store using a natural language query.
-    Returns top_k most semantically similar chunks with scores.
-    """
     if not request.query.strip():
         raise HTTPException(status_code=400, detail="Query cannot be empty")
 
@@ -72,16 +137,13 @@ async def search_chunks(request: SearchRequest):
 
     try:
         store = get_vectorstore()
-        
-        # Using get() to check if empty as a workaround for missing public count()
-        # We only need to know if it's 0, so we limit to 1
         existing = store.get(limit=1)
         if not existing["ids"]:
             raise HTTPException(status_code=404, detail="Vector store is empty — store some chunks first")
 
         results = store.similarity_search_with_relevance_scores(
             query=request.query,
-            k=request.top_k,
+            k=min(request.top_k, count_documents(store)),
         )
 
         search_results = [
@@ -102,9 +164,57 @@ async def search_chunks(request: SearchRequest):
             top_k=request.top_k,
             results=search_results,
         )
-
     except HTTPException:
         raise
-    except Exception as e:
+    except Exception as exc:
         logger.exception("Search failed")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
+
+
+@router.delete("/delete", response_model=DeleteResponse)
+async def delete_by_source(request: DeleteRequest):
+    if not request.source.strip():
+        raise HTTPException(status_code=400, detail="Source cannot be empty")
+
+    try:
+        store = get_vectorstore()
+        existing = store.get(where={"source": request.source})
+        ids_to_delete = existing.get("ids", [])
+
+        if not ids_to_delete:
+            raise HTTPException(
+                status_code=404,
+                detail=f"No chunks found for source: {request.source!r}",
+            )
+
+        store.delete(ids=ids_to_delete)
+        total = count_documents(store)
+
+        logger.info(f"Deleted {len(ids_to_delete)} chunks for source={request.source!r}")
+
+        return DeleteResponse(
+            status="success",
+            source=request.source,
+            chunks_deleted=len(ids_to_delete),
+            total_in_db=total,
+        )
+    except HTTPException:
+        raise
+    except Exception as exc:
+        logger.exception("Delete failed")
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
+
+
+@router.get("/stats", response_model=StatsResponse)
+async def get_stats():
+    try:
+        store = get_vectorstore()
+        return StatsResponse(
+            status="success",
+            total_documents=count_documents(store),
+            persist_directory=CHROMA_DIR,
+            embedding_model="sentence-transformers/all-MiniLM-L6-v2",
+        )
+    except Exception as exc:
+        logger.exception("Stats failed")
+        raise HTTPException(status_code=500, detail=str(exc)) from exc

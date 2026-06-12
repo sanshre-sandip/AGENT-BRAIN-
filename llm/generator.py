@@ -21,9 +21,12 @@ except ImportError:
     ChatAnthropic = None
 
 try:
-    from langchain_community.chat_models import ChatOllama
+    from langchain_ollama import ChatOllama
 except ImportError:
-    ChatOllama = None
+    try:
+        from langchain_community.chat_models import ChatOllama
+    except ImportError:
+        ChatOllama = None
 
 try:
     from langchain_google_genai import ChatGoogleGenerativeAI
@@ -102,8 +105,8 @@ def get_llm(provider: str, model: Optional[str], temperature: float = 0.7, strea
     
     elif provider == "ollama":
         if not ChatOllama:
-            raise HTTPException(status_code=500, detail="langchain-community not installed")
-        return ChatOllama(model=model or "llama3", base_url=OLLAMA_BASE_URL, temperature=temperature)
+            raise HTTPException(status_code=500, detail="langchain-ollama or langchain-community not installed")
+        return ChatOllama(model=model or "llama3", base_url=OLLAMA_BASE_URL, temperature=temperature, streaming=streaming)
     
     else:
         raise HTTPException(status_code=400, detail=f"Unsupported provider: {provider}")
