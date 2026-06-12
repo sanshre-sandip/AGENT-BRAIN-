@@ -3,28 +3,24 @@ from fastapi import FastAPI
 import uvicorn
 import document_loader
 import chunking
+import embedding
+           # 👈 add this
 
-# ----------------------------------
-# Logging
-# ----------------------------------
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s - %(levelname)s - %(message)s"
 )
 logger = logging.getLogger(__name__)
 
-# ----------------------------------
-# FastAPI
-# ----------------------------------
 app = FastAPI(
     title="Web Bot Backend",
     description="Load data from websites or PDFs",
     version="1.0.0"
 )
 
-# Include the router from document_loader
 app.include_router(document_loader.router, prefix="/process")
-app.include_router(chunking.router, prefix="/chunk")
+app.include_router(chunking.router, prefix="/chunk") 
+app.include_router(embedding.router, prefix="/embed")               
 
 @app.get("/")
 async def root():
