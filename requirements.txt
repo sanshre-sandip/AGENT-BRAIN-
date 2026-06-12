@@ -5,4 +5,5 @@ pypdf
 beautifulsoup4
 fastapi 
 uvicorn 
-streamlit 
+streamlit
+langchain_text_splitter 
