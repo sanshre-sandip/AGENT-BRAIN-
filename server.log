@@ -1,0 +1,137 @@
+USER_AGENT environment variable not set, consider setting it to identify your requests.
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+Loading weights:   0%|          | 0/103 [00:00<?, ?it/s]Loading weights: 100%|██████████| 103/103 [00:00<00:00, 8274.85it/s]
+Loading weights:   0%|          | 0/103 [00:00<?, ?it/s]Loading weights: 100%|██████████| 103/103 [00:00<00:00, 8461.06it/s]
+INFO:     Started server process [42751]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
+INFO:     127.0.0.1:44894 - "GET / HTTP/1.1" 200 OK
+2026-06-12 12:49:15,563 - INFO - Stored 5 chunks — total in DB: 75
+INFO:     127.0.0.1:44910 - "POST /vectorstore/store HTTP/1.1" 200 OK
+2026-06-12 12:49:15,606 - INFO - Stored 5 chunks — total in DB: 80
+INFO:     127.0.0.1:44922 - "POST /vectorstore/store HTTP/1.1" 200 OK
+INFO:     127.0.0.1:44932 - "GET /db/info HTTP/1.1" 200 OK
+INFO:     127.0.0.1:44934 - "GET /db/list?limit=5&offset=0 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:44942 - "GET /db/list?limit=5&offset=5 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:44954 - "GET /db/list?source=ai_overview&limit=10 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:44968 - "GET /db/sources HTTP/1.1" 200 OK
+INFO:     127.0.0.1:44976 - "GET /db/get/b8a51089-dfcd-4c1f-bca7-f93c66b6ff24 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50446 - "GET / HTTP/1.1" 200 OK
+2026-06-12 12:49:37,220 - INFO - Stored 5 chunks — total in DB: 85
+INFO:     127.0.0.1:50454 - "POST /vectorstore/store HTTP/1.1" 200 OK
+2026-06-12 12:49:37,238 - INFO - Stored 5 chunks — total in DB: 90
+INFO:     127.0.0.1:50460 - "POST /vectorstore/store HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50476 - "GET /db/info HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50488 - "GET /db/list?limit=5&offset=0 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50504 - "GET /db/list?limit=5&offset=5 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50508 - "GET /db/list?source=ai_overview&limit=10 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50510 - "GET /db/sources HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50522 - "GET /db/get/81f9bd02-2395-4c06-b33f-399f16f4631f HTTP/1.1" 200 OK
+INFO:     127.0.0.1:48742 - "GET / HTTP/1.1" 200 OK
+INFO:     127.0.0.1:48758 - "GET /vectorstore/stats HTTP/1.1" 200 OK
+2026-06-12 12:50:52,815 - INFO - Stored 5 chunks — total in DB: 95
+INFO:     127.0.0.1:48760 - "POST /vectorstore/store HTTP/1.1" 200 OK
+2026-06-12 12:50:52,883 - INFO - Stored 5 chunks — total in DB: 100
+INFO:     127.0.0.1:48774 - "POST /vectorstore/store HTTP/1.1" 200 OK
+2026-06-12 12:50:53,046 - INFO - Search query='how do machines learn from data?' — returned 3 results
+INFO:     127.0.0.1:48786 - "POST /vectorstore/search HTTP/1.1" 200 OK
+2026-06-12 12:50:53,062 - INFO - Search query='what is Python used for?' — returned 3 results
+INFO:     127.0.0.1:48802 - "POST /vectorstore/search HTTP/1.1" 200 OK
+2026-06-12 12:50:53,076 - INFO - Search query='language understanding and text processing' — returned 3 results
+INFO:     127.0.0.1:48806 - "POST /vectorstore/search HTTP/1.1" 200 OK
+INFO:     127.0.0.1:48820 - "GET /vectorstore/stats HTTP/1.1" 200 OK
+2026-06-12 12:50:53,083 - INFO - Loading Website: https://en.wikipedia.org/wiki/LangChain
+2026-06-12 12:50:53,882 - INFO - Loaded 1 documents successfully
+INFO:     127.0.0.1:48832 - "POST /process HTTP/1.1" 200 OK
+2026-06-12 12:50:53,885 - INFO - Chunking content — size=300, overlap=50, source='langchain_wiki'
+2026-06-12 12:50:53,886 - INFO - Produced 4 chunks from 1000 characters
+INFO:     127.0.0.1:48846 - "POST /chunk HTTP/1.1" 200 OK
+2026-06-12 12:50:53,907 - INFO - Stored 4 chunks — total in DB: 104
+INFO:     127.0.0.1:48850 - "POST /vectorstore/store HTTP/1.1" 200 OK
+2026-06-12 12:50:53,916 - INFO - Search query='what is LangChain used for?' — returned 2 results
+INFO:     127.0.0.1:48852 - "POST /vectorstore/search HTTP/1.1" 200 OK
+2026-06-12 12:50:53,934 - INFO - Deleted 50 chunks for source='ai_overview'
+INFO:     127.0.0.1:48854 - "DELETE /vectorstore/delete HTTP/1.1" 200 OK
+INFO:     127.0.0.1:48868 - "DELETE /vectorstore/delete HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:48874 - "POST /vectorstore/store HTTP/1.1" 400 Bad Request
+INFO:     127.0.0.1:48878 - "POST /vectorstore/search HTTP/1.1" 400 Bad Request
+INFO:     127.0.0.1:49008 - "GET / HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49016 - "GET /vectorstore/stats HTTP/1.1" 200 OK
+2026-06-12 12:51:32,056 - INFO - Stored 5 chunks — total in DB: 59
+INFO:     127.0.0.1:49026 - "POST /vectorstore/store HTTP/1.1" 200 OK
+2026-06-12 12:51:32,084 - INFO - Stored 5 chunks — total in DB: 64
+INFO:     127.0.0.1:49032 - "POST /vectorstore/store HTTP/1.1" 200 OK
+2026-06-12 12:51:32,097 - INFO - Search query='how do machines learn from data?' — returned 3 results
+INFO:     127.0.0.1:49046 - "POST /vectorstore/search HTTP/1.1" 200 OK
+2026-06-12 12:51:32,110 - INFO - Search query='what is Python used for?' — returned 3 results
+INFO:     127.0.0.1:49048 - "POST /vectorstore/search HTTP/1.1" 200 OK
+/home/sandip/web_bot/vectorstore.py:142: UserWarning: Relevance scores must be between 0 and 1, got [(Document(id='8120837c-66b7-4695-9598-772e6d3cc9bd', metadata={'source': 'ai_overview'}, page_content='Natural language processing deals with interactions between computers and human language.'), 0.37959594540242625), (Document(id='a7d354cf-abce-4611-b23e-39ba9a7a6e1a', metadata={'source': 'langchain_wiki'}, page_content='LangChain\n\n\n\n13 languages\n\n\n\n\nCatalàفارسیFrançaisहिन्दी日本語한국어PortuguêsРусскийSimple EnglishไทยTürkçeУкраїнська中文\n\nEdit links\n\n\n\n\n\n\n\n\n\n\n\nArticleTalk\n\n\n\n\n\nEnglish\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\nReadEditView history\n\n\n\n\n\n\n\nTools\n\n\n\n\n\nTools\nmove to sidebar\nhide\n\n\n\n\t\tActions\n\t\n\n\nRead\n\nEdit\n\nV'), 0.011356485445531472), (Document(id='857e4e36-5d96-4ccc-b9ca-935e9b6440f5', metadata={'source': 'langchain_wiki'}, page_content='LangChain - Wikipedia\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\nJump to content\n\n\n\n\n\n\n\nMain menu\n\n\n\n\n\nMain menu\nmove to sidebar\nhide\n\n\n\n\t\tNavigation\n\t\n\n\nMain pageContentsCurrent eventsRandom articleAbout WikipediaContact us\n\n\n\n\n\n\t\tContribute'), -0.11381122526212151)]
+  results = vectorstore.similarity_search_with_relevance_scores(
+2026-06-12 12:51:32,136 - INFO - Search query='language understanding and text processing' — returned 3 results
+INFO:     127.0.0.1:49058 - "POST /vectorstore/search HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49064 - "GET /vectorstore/stats HTTP/1.1" 200 OK
+2026-06-12 12:51:32,147 - INFO - Loading Website: https://en.wikipedia.org/wiki/LangChain
+2026-06-12 12:51:32,996 - INFO - Loaded 1 documents successfully
+INFO:     127.0.0.1:49080 - "POST /process HTTP/1.1" 200 OK
+2026-06-12 12:51:33,000 - INFO - Chunking content — size=300, overlap=50, source='langchain_wiki'
+2026-06-12 12:51:33,000 - INFO - Produced 4 chunks from 1000 characters
+INFO:     127.0.0.1:50952 - "POST /chunk HTTP/1.1" 200 OK
+2026-06-12 12:51:33,030 - INFO - Stored 4 chunks — total in DB: 68
+INFO:     127.0.0.1:50954 - "POST /vectorstore/store HTTP/1.1" 200 OK
+2026-06-12 12:51:33,042 - INFO - Search query='what is LangChain used for?' — returned 2 results
+INFO:     127.0.0.1:50968 - "POST /vectorstore/search HTTP/1.1" 200 OK
+2026-06-12 12:51:33,060 - INFO - Deleted 5 chunks for source='ai_overview'
+INFO:     127.0.0.1:50970 - "DELETE /vectorstore/delete HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50982 - "DELETE /vectorstore/delete HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:50986 - "POST /vectorstore/store HTTP/1.1" 400 Bad Request
+INFO:     127.0.0.1:50992 - "POST /vectorstore/search HTTP/1.1" 400 Bad Request
+INFO:     127.0.0.1:50290 - "GET / HTTP/1.1" 200 OK
+2026-06-12 12:52:10,207 - INFO - Stored 5 chunks — total in DB: 68
+INFO:     127.0.0.1:50292 - "POST /vectorstore/store HTTP/1.1" 200 OK
+2026-06-12 12:52:10,249 - INFO - Stored 5 chunks — total in DB: 73
+INFO:     127.0.0.1:50298 - "POST /vectorstore/store HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50314 - "GET /db/info HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50324 - "GET /db/list?limit=5&offset=0 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50332 - "GET /db/list?limit=5&offset=5 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50344 - "GET /db/list?source=ai_overview&limit=10 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50348 - "GET /db/sources HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50364 - "GET /db/get/fd0be53b-1993-46ea-83e2-0a4b847ebbc3 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59724 - "GET / HTTP/1.1" 200 OK
+2026-06-12 12:53:45,667 - INFO - Stored 5 chunks — total in DB: 78
+INFO:     127.0.0.1:59726 - "POST /vectorstore/store HTTP/1.1" 200 OK
+2026-06-12 12:53:45,697 - INFO - Stored 5 chunks — total in DB: 83
+INFO:     127.0.0.1:59734 - "POST /vectorstore/store HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59742 - "GET /db/info HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59748 - "GET /db/list?limit=5&offset=0 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59754 - "GET /db/list?limit=5&offset=5 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59766 - "GET /db/list?source=ai_overview&limit=10 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59772 - "GET /db/sources HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59784 - "GET /db/get/76b3f619-a15a-4c98-ae0e-7a2b86f03319 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59788 - "GET /db/get/fake-id-that-does-not-exist HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:59802 - "DELETE /db/clear-source HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59810 - "GET /db/sources HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59824 - "DELETE /db/clear-source HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:59836 - "DELETE /db/clear-source HTTP/1.1" 400 Bad Request
+INFO:     127.0.0.1:59848 - "DELETE /db/clear-all HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59854 - "GET /db/info HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49426 - "GET / HTTP/1.1" 200 OK
+2026-06-12 12:54:03,565 - INFO - Stored 5 chunks — total in DB: 5
+INFO:     127.0.0.1:49428 - "POST /vectorstore/store HTTP/1.1" 200 OK
+2026-06-12 12:54:03,596 - INFO - Stored 5 chunks — total in DB: 10
+INFO:     127.0.0.1:49444 - "POST /vectorstore/store HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49452 - "GET /db/info HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49456 - "GET /db/list?limit=5&offset=0 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49462 - "GET /db/list?limit=5&offset=5 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49468 - "GET /db/list?source=ai_overview&limit=10 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49472 - "GET /db/sources HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49478 - "GET /db/get/037f5b8f-82eb-45ae-9320-8b1a2396fdc7 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49488 - "GET /db/get/fake-id-that-does-not-exist HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:49504 - "DELETE /db/clear-source HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49506 - "GET /db/sources HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49514 - "DELETE /db/clear-source HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:49522 - "DELETE /db/clear-source HTTP/1.1" 400 Bad Request
+INFO:     127.0.0.1:49538 - "DELETE /db/clear-all HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49546 - "GET /db/info HTTP/1.1" 200 OK
+/usr/lib/python3.14/multiprocessing/resource_tracker.py:396: UserWarning: resource_tracker: There appear to be 1 leaked semaphore objects to clean up at shutdown: {'/loky-42751-zldk_reh'}
+  warnings.warn(

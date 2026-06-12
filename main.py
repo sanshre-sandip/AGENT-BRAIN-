@@ -4,7 +4,11 @@ import uvicorn
 import document_loader
 import chunking
 import embedding
-           # 👈 add this
+import vectorstore
+import db
+import retriever
+
+
 
 logging.basicConfig(
     level=logging.INFO,
@@ -20,7 +24,10 @@ app = FastAPI(
 
 app.include_router(document_loader.router, prefix="/process")
 app.include_router(chunking.router, prefix="/chunk") 
-app.include_router(embedding.router, prefix="/embed")               
+app.include_router(embedding.router, prefix="/embed")    
+app.include_router(vectorstore.router, prefix="/vectorstore")      
+app.include_router(db.router, prefix="/db")     
+app.include_router(retriever.router, prefix="/retrieve")
 
 @app.get("/")
 async def root():
