@@ -1,20 +1,28 @@
-import os
 from typing import Any
 
 import httpx
 import streamlit as st
 from dotenv import load_dotenv
 
+from RAG.config import (
+    BACKEND_URL,
+    DEFAULT_LLM_MODEL,
+    DEFAULT_LLM_TEMPERATURE,
+    DEFAULT_RAG_K,
+    DEFAULT_RAG_SOURCE_FILTER,
+    DEFAULT_USE_RAG,
+    LLM_PROVIDER,
+)
+
 load_dotenv()
 
 st.set_page_config(page_title="Web Bot Chat", layout="wide")
 
-DEFAULT_BACKEND_URL = "http://localhost:8000"
 DEFAULT_TIMEOUT = 180.0
 
 
 def get_backend_url() -> str:
-    return os.getenv("BACKEND", DEFAULT_BACKEND_URL).rstrip("/")
+    return BACKEND_URL.rstrip("/")
 
 
 def call_backend(path: str, payload: dict[str, Any], backend_url: str) -> dict[str, Any]:
@@ -45,73 +53,24 @@ def build_history(messages: list[dict[str, str]]) -> list[dict[str, str]]:
 def initialize_session_state() -> None:
     st.session_state.setdefault("messages", [])
     st.session_state.setdefault("backend_url", get_backend_url())
-    st.session_state.setdefault("last_context", [])
 
 
-def render_sidebar() -> tuple[str, str, str, int, float, bool, str]:
-    st.sidebar.title("Chat Settings")
-
-    backend_url = st.sidebar.text_input("Backend URL", value=st.session_state.backend_url)
-    st.session_state.backend_url = backend_url.rstrip("/")
-
-    provider = st.sidebar.selectbox(
-        "Provider",
-        ["backend default", "openai", "anthropic", "ollama", "google"],
-        index=0,
-    )
-
-    model = st.sidebar.text_input("Model", value="")
-    temperature = st.sidebar.slider("Temperature", 0.0, 2.0, 0.2, 0.1)
-    k = st.sidebar.number_input("Retrieve top_k", 1, 20, 5, 1)
-    source = st.sidebar.text_input("RAG source filter", value="")
-    use_rag = st.sidebar.checkbox("Use RAG retrieval", value=True)
+def render_sidebar() -> tuple[str, str, float, bool, str, int]:
+    st.sidebar.title("System Chat Settings")
+    st.sidebar.caption(f"Backend: {get_backend_url()}")
+    st.sidebar.caption(f"Provider: {LLM_PROVIDER or 'backend default'}")
+    st.sidebar.caption(f"Model: {DEFAULT_LLM_MODEL or 'backend default'}")
+    st.sidebar.caption(f"Temperature: {DEFAULT_LLM_TEMPERATURE}")
+    st.sidebar.caption(f"RAG enabled: {DEFAULT_USE_RAG}")
+    st.sidebar.caption(f"RAG top_k: {DEFAULT_RAG_K}")
+    st.sidebar.caption(f"RAG source filter: {DEFAULT_RAG_SOURCE_FILTER or 'none'}")
 
     if st.sidebar.button("Clear Chat"):
         st.session_state.messages = []
-        st.session_state.last_context = []
         st.rerun()
 
-    return backend_url.rstrip("/"), provider, model, k, temperature, use_rag, source
-
-
-def retrieve_context(
-    backend_url: str,
-    query: str,
-    source: str,
-    k: int,
-) -> list[str]:
-    payload = {
-        "query": query,
-        "source": source or None,
-        "k": k,
-    }
-    data = call_backend("/retrieve/query", payload, backend_url)
-    return [result["text"] for result in data.get("results", [])]
-
-
-def generate_answer(
-    backend_url: str,
-    query: str,
-    context: list[str],
-    messages: list[dict[str, str]],
-    provider: str,
-    model: str,
-    temperature: float,
-) -> str:
-    payload: dict[str, Any] = {
-        "query": query,
-        "context": context,
-        "history": build_history(messages),
-        "temperature": temperature,
-        "stream": False,
-    }
-    if provider != "backend default":
-        payload["provider"] = provider
-    if model:
-        payload["model"] = model
-
-    data = call_backend("/generate", payload, backend_url)
-    return data.get("answer", "")
+    provider = LLM_PROVIDER or "backend default"
+    return get_backend_url(), provider, DEFAULT_LLM_TEMPERATURE, DEFAULT_USE_RAG, DEFAULT_RAG_SOURCE_FILTER, DEFAULT_RAG_K
 
 
 def send_chat_message(
@@ -124,24 +83,39 @@ def send_chat_message(
     use_rag: bool,
     source: str,
     k: int,
-) -> tuple[str, list[str]]:
-    if use_rag:
-        context = retrieve_context(backend_url, query, source, k)
-        if not context:
-            context = ["No relevant context found."]
-    else:
-        context = ["No retrieval context provided."]
+) -> str:
+    history = build_history(messages)
 
-    answer = generate_answer(
-        backend_url,
-        query,
-        context,
-        messages,
-        provider,
-        model,
-        temperature,
-    )
-    return answer, context
+    if use_rag:
+        payload: dict[str, Any] = {
+            "query": query,
+            "source": source or None,
+            "k": k,
+            "history": history,
+            "temperature": temperature,
+            "stream": False,
+        }
+        if provider != "backend default":
+            payload["provider"] = provider
+        if model:
+            payload["model"] = model
+        data = call_backend("/generate/rag", payload, backend_url)
+        return data.get("answer", "")
+
+    payload = {
+        "query": query,
+        "context": ["No retrieval context provided."],
+        "history": history,
+        "temperature": temperature,
+        "stream": False,
+    }
+    if provider != "backend default":
+        payload["provider"] = provider
+    if model:
+        payload["model"] = model
+
+    data = call_backend("/generate", payload, backend_url)
+    return data.get("answer", "")
 
 
 def render_messages() -> None:
@@ -154,26 +128,14 @@ def render_messages() -> None:
             st.write(message["content"])
 
 
-def render_last_context() -> None:
-    context = st.session_state.last_context
-    if not context:
-        return
-
-    with st.expander("Retrieved context used for the last answer"):
-        for idx, text in enumerate(context, 1):
-            st.markdown(f"**Context {idx}**")
-            st.write(text)
-
-
 def main() -> None:
     initialize_session_state()
-    backend_url, provider, model, k, temperature, use_rag, source = render_sidebar()
+    backend_url, provider, temperature, use_rag, source, k = render_sidebar()
 
     st.title("Web Bot Chat")
-    st.caption("Chat with the FastAPI backend. RAG mode retrieves context first, then sends retrieved text plus the user query to the LLM.")
+    st.caption("Chat with the FastAPI backend using system-defined chat settings.")
 
     render_messages()
-    render_last_context()
 
     prompt = st.chat_input("Type your message...")
     if not prompt:
@@ -183,26 +145,24 @@ def main() -> None:
 
     with st.chat_message("assistant"):
         placeholder = st.empty()
-        placeholder.write("Retrieving context and generating answer...")
+        placeholder.write("Thinking...")
         try:
-            answer, context = send_chat_message(
+            answer = send_chat_message(
                 backend_url,
                 prompt,
                 st.session_state.messages[:-1],
                 provider,
-                model,
+                DEFAULT_LLM_MODEL,
                 temperature,
                 use_rag,
                 source,
                 k,
             )
             st.session_state.messages.append({"role": "assistant", "content": answer})
-            st.session_state.last_context = context
             placeholder.write(answer)
         except Exception as exc:
             error_message = str(exc)
             st.session_state.messages.append({"role": "assistant", "content": error_message})
-            st.session_state.last_context = []
             placeholder.error(error_message)
 
     st.rerun()

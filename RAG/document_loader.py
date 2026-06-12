@@ -60,6 +60,7 @@ async def process_source(request: SourceRequest):
             "source_processed": request.source,
             "document_count": len(docs),
             "processed_length": len(content),
+            "content": content,
             "preview": content[:1000],
             "message": "Document loaded successfully"
         }

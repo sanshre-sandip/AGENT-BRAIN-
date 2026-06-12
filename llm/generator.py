@@ -113,17 +113,17 @@ def get_llm(provider: str, model: Optional[str], temperature: float = 0.7, strea
 
 def construct_prompt(query: str, context: List[str], history: Optional[List[Message]] = None):
     """
-    Constructs a prompt with context and history.
+    Constructs a prompt with retriever output or context and the user query.
     """
     system_msg = (
-        "You are a helpful AI assistant. Use the provided context to answer the user's question.\n"
-        "If the answer is not contained within the context, politely state that you don't know based on the provided information.\n"
+        "You are a helpful AI assistant. Use the provided retriever output to answer the user's question.\n"
+        "If the answer is not contained within the retriever output, politely state that you don't know based on the provided information.\n"
         "Keep your answer concise and well-structured."
     )
     
-    context_text = "\n---\n".join(context)
+    context_text = "\n\n---\n\n".join(context)
     
-    prompt = f"{system_msg}\n\nContext:\n{context_text}\n\n"
+    prompt = f"{system_msg}\n\nRetriever Output:\n{context_text}\n\n"
     
     if history:
         prompt += "Conversation History:\n"
@@ -131,7 +131,7 @@ def construct_prompt(query: str, context: List[str], history: Optional[List[Mess
             prompt += f"{msg.role.capitalize()}: {msg.content}\n"
         prompt += "\n"
     
-    prompt += f"User Question: {query}\n"
+    prompt += f"User Query: {query}\n"
     prompt += "Assistant Answer:"
     
     return prompt
@@ -190,12 +190,12 @@ async def rag_answer(request: RagRequest):
         store = get_vectorstore()
         filter_dict = {"source": request.source} if request.source else None
         docs = store.similarity_search(request.query, k=request.k, filter=filter_dict)
-        context = [doc.page_content for doc in docs]
+        retriever_output = [
+            f"Source: {doc.metadata.get('source', 'unknown')}\n{doc.page_content}"
+            for doc in docs
+        ]
+        context = retriever_output if retriever_output else ["No relevant context found."]
         
-        if not context:
-            logger.warning("No relevant context found in vector store.")
-            context = ["No relevant context found."]
-            
         # 2. Generate answer
         llm = get_llm(provider, request.model, request.temperature, request.stream)
         prompt = construct_prompt(request.query, context, request.history)
