@@ -3,14 +3,21 @@ import httpx
 import asyncio
 import os
 from dotenv import load_dotenv
+# Ensure .env is loaded before reading environment variables
 load_dotenv()
 st.set_page_config(page_title="Web Bot Control", layout="wide")
 
 st.title("🤖 Web Bot Control Panel")
 st.markdown("Enter the source (URL or text) below to let the bot process it.")
 
-# Backend URL
-BACKEND_URL=os.getenv("BACKEND")
+# Backend URL hardening
+BACKEND_URL = os.getenv("BACKEND", "http://localhost:8000")
+
+if BACKEND_URL == "":
+    raise ValueError(
+        "BACKEND environment variable is empty. "
+        "Please set it to a valid URL (e.g., http://localhost:8000) in your .env file or environment."
+    )
 
 # UI Layout
 loader_type = st.radio("Select Loader Type", ["Web URL", "PDF File Path"], horizontal=True)

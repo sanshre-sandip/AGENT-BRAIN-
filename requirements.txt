@@ -13,3 +13,4 @@ langchain-chroma
 chromadb
 langchain-openai
 langchain-anthropic
+langchain-google-genai

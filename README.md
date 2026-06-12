@@ -13,25 +13,26 @@ A decoupled web bot application featuring a **FastAPI** backend for processing d
 
 ```text
 web_bot/
-├── main.py              # FastAPI Backend Server
+├── RAG/                 # Core RAG logic (FastAPI App, VectorStore, etc.)
+│   ├── main.py          # FastAPI Backend Server
+│   ├── db.py            # Database CRUD Operations
+│   ├── vectorstore.py   # Vector Similarity Search
+│   └── retriever.py     # RAG Pipeline Orchestration
 ├── streamlight/
 │   └── app.py           # Streamlit Frontend UI
-├── web/                 # Python Virtual Environment
+├── tests/               # Pytest suite
 ├── .env                 # Environment Variables (Backend URL, etc.)
 └── requirements.txt     # Project Dependencies
 ```
 
 ## 🛠️ Setup & Installation
 
-### 1. Environment Preparation
-Ensure you have Python 3.10+ installed. This project uses a virtual environment located in the `web/` directory.
-
-### 2. Install Dependencies
+### 1. Install Dependencies
 ```bash
-./web/bin/pip install -r requirements.txt
+pip install -r requirements.txt
 ```
 
-### 3. Configuration
+### 2. Configuration
 Create or update the `.env` file in the root directory:
 ```env
 BACKEND=http://localhost:8000
@@ -43,15 +44,20 @@ You need to run the backend and frontend in two separate terminal sessions.
 
 ### Step 1: Start the Backend (FastAPI)
 ```bash
-./web/bin/python main.py
+python RAG/main.py
 ```
 *The backend will start on `http://localhost:8000`.*
 
 ### Step 2: Start the Frontend (Streamlit)
 ```bash
-./web/bin/streamlit run streamlight/app.py
+streamlit run streamlight/app.py
 ```
 *The UI will automatically open in your default web browser.*
+
+## 🧪 Running Tests
+```bash
+pytest tests/
+```
 
 ## 📖 Usage
 

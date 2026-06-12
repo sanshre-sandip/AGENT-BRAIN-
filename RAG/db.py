@@ -1,18 +1,78 @@
 import logging
+import uuid
 from collections import Counter
+from typing import Optional
 
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
-from vectorstore import vectorstore
+from .vectorstore import get_vectorstore
 
 router = APIRouter()
-
 logger = logging.getLogger(__name__)
+
+# ----------------------------------
+# Request / Response Models
+# ----------------------------------
+class StoreRequest(BaseModel):
+    chunks: list[str]               # Text chunks to store
+    source: Optional[str] = None    # Optional source label (URL or file path)
+
+
+class StoreResponse(BaseModel):
+    status: str
+    source: Optional[str]
+    chunks_stored: int
+    total_in_db: int
+    ids: list[str]
 
 
 class SourceRequest(BaseModel):
     source: str
+
+
+# ----------------------------------
+# Endpoints
+# ----------------------------------
+
+@router.post("/store", response_model=StoreResponse)
+async def store_chunks(request: StoreRequest):
+    """
+    Store text chunks into Chroma vector store.
+    """
+    if not request.chunks:
+        raise HTTPException(status_code=400, detail="Chunks list cannot be empty")
+
+    valid_chunks = [c for c in request.chunks if c.strip()]
+    if not valid_chunks:
+        raise HTTPException(status_code=400, detail="All chunks are empty or whitespace")
+
+    try:
+        store = get_vectorstore()
+        ids = [str(uuid.uuid4()) for _ in valid_chunks]
+        metadatas = [{"source": request.source or "unknown"} for _ in valid_chunks]
+
+        store.add_texts(
+            texts=valid_chunks,
+            metadatas=metadatas,
+            ids=ids,
+        )
+
+        # Public count workaround: get all IDs
+        total = len(store.get(include=[])["ids"])
+        logger.info(f"Stored {len(valid_chunks)} chunks — total in DB: {total}")
+
+        return StoreResponse(
+            status="success",
+            source=request.source,
+            chunks_stored=len(valid_chunks),
+            total_in_db=total,
+            ids=ids,
+        )
+
+    except Exception as e:
+        logger.exception("Store failed")
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.get("/info")
@@ -21,17 +81,11 @@ async def db_info():
     Database overview.
     """
     try:
-        result = vectorstore._collection.get(
-            include=["documents", "metadatas"]
-        )
+        store = get_vectorstore()
+        result = store.get(include=["metadatas"])
 
         total_docs = len(result["ids"])
-
-        sources = [
-            meta.get("source", "unknown")
-            for meta in result["metadatas"]
-        ]
-
+        sources = [meta.get("source", "unknown") for meta in result["metadatas"]]
         source_counts = dict(Counter(sources))
 
         return {
@@ -53,29 +107,17 @@ async def list_sources():
     List all sources and chunk counts.
     """
     try:
-        result = vectorstore._collection.get(
-            include=["metadatas"]
-        )
+        store = get_vectorstore()
+        result = store.get(include=["metadatas"])
 
-        sources = [
-            meta.get("source", "unknown")
-            for meta in result["metadatas"]
-        ]
-
+        sources = [meta.get("source", "unknown") for meta in result["metadatas"]]
         counts = Counter(sources)
 
         output = [
-            {
-                "source": source,
-                "chunk_count": count
-            }
+            {"source": source, "chunk_count": count}
             for source, count in counts.items()
         ]
-
-        output.sort(
-            key=lambda x: x["chunk_count"],
-            reverse=True
-        )
+        output.sort(key=lambda x: x["chunk_count"], reverse=True)
 
         return {
             "total_sources": len(output),
@@ -97,44 +139,37 @@ async def list_chunks(
     Paginated chunk listing.
     """
     try:
-        result = vectorstore._collection.get(
-            include=["documents", "metadatas"]
+        store = get_vectorstore()
+        # Filter by source if provided using public 'where'
+        where = {"source": source} if source else None
+        
+        result = store.get(
+            where=where,
+            include=["documents", "metadatas"],
+            limit=limit,
+            offset=offset
         )
 
-        ids = result["ids"]
-        docs = result["documents"]
-        metas = result["metadatas"]
-
         chunks = []
-
-        for chunk_id, doc, meta in zip(ids, docs, metas):
-
-            chunk_source = meta.get(
-                "source",
-                "unknown"
-            )
-
-            if source and chunk_source != source:
-                continue
-
+        for chunk_id, doc, meta in zip(result["ids"], result["documents"], result["metadatas"]):
             chunks.append({
                 "id": chunk_id,
-                "source": chunk_source,
+                "source": meta.get("source", "unknown"),
                 "char_count": len(doc),
                 "preview": doc[:200]
             })
 
-        total_matching = len(chunks)
-
-        paginated = chunks[offset:offset + limit]
+        # To get total_matching without pagination, we might need another get()
+        # but for simplicity we'll just return what we have or a total count
+        total_matching = len(store.get(where=where, include=[])["ids"])
 
         return {
             "source_filter": source,
             "total_matching": total_matching,
-            "returned": len(paginated),
+            "returned": len(chunks),
             "limit": limit,
             "offset": offset,
-            "chunks": paginated
+            "chunks": chunks
         }
 
     except Exception as e:
@@ -148,14 +183,13 @@ async def get_chunk(chunk_id: str):
     Fetch one chunk by ID.
     """
     try:
-        result = vectorstore._collection.get(
+        store = get_vectorstore()
+        result = store.get(
             ids=[chunk_id],
             include=["documents", "metadatas"]
         )
 
-        ids = result.get("ids", [])
-
-        if not ids:
+        if not result["ids"]:
             raise HTTPException(
                 status_code=404,
                 detail=f"Chunk not found: {chunk_id}"
@@ -163,17 +197,13 @@ async def get_chunk(chunk_id: str):
 
         return {
             "status": "success",
-            "id": ids[0],
-            "source": result["metadatas"][0].get(
-                "source",
-                "unknown"
-            ),
+            "id": result["ids"][0],
+            "source": result["metadatas"][0].get("source", "unknown"),
             "text": result["documents"][0]
         }
 
     except HTTPException:
         raise
-
     except Exception as e:
         logger.exception("Get chunk failed")
         raise HTTPException(status_code=500, detail=str(e))
@@ -186,25 +216,12 @@ async def clear_source(request: SourceRequest):
     """
     try:
         source = request.source.strip()
-
         if not source:
-            raise HTTPException(
-                status_code=400,
-                detail="Source cannot be empty"
-            )
+            raise HTTPException(status_code=400, detail="Source cannot be empty")
 
-        result = vectorstore._collection.get(
-            include=["metadatas"]
-        )
-
-        ids_to_delete = []
-
-        for chunk_id, meta in zip(
-            result["ids"],
-            result["metadatas"]
-        ):
-            if meta.get("source") == source:
-                ids_to_delete.append(chunk_id)
+        store = get_vectorstore()
+        result = store.get(where={"source": source}, include=[])
+        ids_to_delete = result.get("ids", [])
 
         if not ids_to_delete:
             raise HTTPException(
@@ -212,11 +229,8 @@ async def clear_source(request: SourceRequest):
                 detail=f"No chunks found for source: {source}"
             )
 
-        vectorstore._collection.delete(
-            ids=ids_to_delete
-        )
-
-        remaining = vectorstore._collection.count()
+        store.delete(ids=ids_to_delete)
+        remaining = len(store.get(include=[])["ids"])
 
         return {
             "message": f"Removed source '{source}'",
@@ -226,7 +240,6 @@ async def clear_source(request: SourceRequest):
 
     except HTTPException:
         raise
-
     except Exception as e:
         logger.exception("Clear source failed")
         raise HTTPException(status_code=500, detail=str(e))
@@ -238,14 +251,12 @@ async def clear_all():
     Delete entire database.
     """
     try:
-        count_before = vectorstore._collection.count()
-
-        result = vectorstore._collection.get()
+        store = get_vectorstore()
+        result = store.get(include=[])
+        count_before = len(result["ids"])
 
         if result["ids"]:
-            vectorstore._collection.delete(
-                ids=result["ids"]
-            )
+            store.delete(ids=result["ids"])
 
         return {
             "message": "Database cleared",

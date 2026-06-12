@@ -3,6 +3,7 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from typing import Optional
 from langchain_huggingface import HuggingFaceEmbeddings
+from .config import EMBEDDING_MODEL
 
 # ----------------------------------
 # Setup
@@ -12,12 +13,20 @@ logger = logging.getLogger(__name__)
 
 # Free open-source model from HuggingFace (no API key needed)
 # all-MiniLM-L6-v2: fast, lightweight, great for semantic search
-EMBEDDING_MODEL = "sentence-transformers/all-MiniLM-L6-v2"
+# EMBEDDING_MODEL is now imported from .config
 
-# Load model once at startup (avoid reloading on every request)
-logger.info(f"Loading embedding model: {EMBEDDING_MODEL}")
-embedder = HuggingFaceEmbeddings(model_name=EMBEDDING_MODEL)
-logger.info("Embedding model loaded successfully")
+_embedder = None
+...
+def get_embedder():
+    """
+    Lazy-load the embedding model.
+    """
+    global _embedder
+    if _embedder is None:
+        logger.info(f"Loading embedding model: {EMBEDDING_MODEL}")
+        _embedder = HuggingFaceEmbeddings(model_name=EMBEDDING_MODEL)
+        logger.info("Embedding model loaded successfully")
+    return _embedder
 
 
 # ----------------------------------
@@ -62,7 +71,9 @@ async def embed_chunks(request: EmbedRequest):
     try:
         logger.info(f"Embedding {len(valid_chunks)} chunks from source={request.source!r}")
 
+        embedder = get_embedder()
         vectors = embedder.embed_documents(valid_chunks)
+
 
         embeddings = [
             {

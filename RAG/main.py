@@ -1,18 +1,13 @@
 import logging
-import sys
-import os
 from fastapi import FastAPI
 import uvicorn
 
-# Add parent directory to sys.path to allow importing from 'llm' folder
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
-import document_loader
-import chunking
-import embedding
-import vectorstore
-import db
-import retriever
+from RAG import document_loader
+from RAG import chunking
+from RAG import embedding
+from RAG import vectorstore
+from RAG import db
+from RAG import retriever
 from llm import router as llm_router
 
 logging.basicConfig(

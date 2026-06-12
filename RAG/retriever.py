@@ -3,7 +3,7 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from typing import Optional
 
-from vectorstore import vectorstore as store   # ← module-level Chroma instance
+from .vectorstore import get_vectorstore
 
 # ----------------------------------
 # Logging
@@ -42,6 +42,7 @@ async def query_chunks(req: QueryRequest):
         raise HTTPException(status_code=400, detail="k must be between 1 and 50")
 
     try:
+        store = get_vectorstore()
         filter_dict = {"source": req.source} if req.source else None
 
         results = store.similarity_search_with_score(
@@ -86,7 +87,9 @@ async def query_multi_source(req: QueryRequest):
         raise HTTPException(status_code=400, detail="Query cannot be empty")
 
     try:
-        raw = store._collection.get(include=["metadatas"])
+        store = get_vectorstore()
+        # Public replacement for _collection.get()
+        raw = store.get(include=["metadatas"])
         sources = list({m.get("source", "unknown") for m in raw["metadatas"]})
 
         if not sources:
